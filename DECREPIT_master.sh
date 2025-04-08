@@ -28,31 +28,22 @@ done < "$filename"
 
 # Run the automated database search for each gene
 for gene in "${gene_list[@]}"; do
-	echo "Looking for whole genomes with $gene..."
-	# bash ${script_path}automated_query_db_whole_no_cmd.sh "$gene" "$organism" "$output_folder"
-	echo "Extracting genes into FASTA format..."
-	python3 ${script_path}extract_fasta_from_db.py "${output_folder}/NCBI_${gene}.gb"
-	echo "Searching for individual gene uploads..."
+	bash ${script_path}automated_query_db_whole_no_cmd.sh "$gene" "$organism" "$output_folder"
 	bash ${script_path}query_db_individual_genes.sh "$gene" "$organism" "$output_folder"
-	echo "Merging all genes into one file..."
-	python3 ${script_path2}combine_fasta_cmd_line.py "${output_folder}NCBI_${gene}_extracted.fasta" "${output_folder}NCBI_${gene}_sequences.fasta" "${output_folder}NCBI_${gene}_merged.fasta"
 done
 
 # Create FASTA files from the databases you have just created
-# python3 ${script_path}extract_fasta_from_db.py $output_folder
+python3 ${script_path}extract_fasta_from_db.py $output_folder
 
 # Remove the (large) database files
 echo "Removing database files..."
-find "$output_folder" -type f -name "*.gb" -exec rm {} \;
-echo "Removing bloated FASTA files..."
-find "$output_folder" -type f -name "*extracted.fasta" -exec rm {} \;
-echo "Removing individual sequences..."
-find "$output_folder" -type f -name "*sequences.fasta" -exec rm {} \;
+# find "$output_folder" -type f -name "*.gb" -exec rm {} \;
+
 # do I want to add the merger here so I can filter at the same time?
 
 # For each gene extract the sequences from the larger sets
 for gene in "${gene_list[@]}"; do
-	echo "Filtering FASTA files..."
+	echo "filtering files"
 	echo $gene
 	filtered_file_name=$(grep -rl "$gene" "$output_folder" | head -n 1)
 	echo $filtered_file_name

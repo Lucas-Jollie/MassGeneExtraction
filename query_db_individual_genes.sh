@@ -12,5 +12,5 @@ output_folder="$3"
 
 echo "Starting individual gene query..."
 echo "Searching for gene: $gene"
-esearch -db nucleotide -query "(${gene}[gene]) AND ${organism}[organism] NOT (complete genome) NOT (contig) NOT (whole genome shotgun)" | efetch -format fasta > ${output_folder}NCBI_${gene}_sequences.fasta
+esearch -db nucleotide -query "(${gene}[gene]) AND ${organism}[organism] NOT (complete genome) NOT (contig) NOT (whole genome shotgun)" | efetch -format gb > ${output_folder}NCBI_${gene}_genes.gb
 
