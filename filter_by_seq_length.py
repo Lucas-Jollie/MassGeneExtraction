@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Import BioPython and stats functions
 from Bio import SeqIO
 import argparse

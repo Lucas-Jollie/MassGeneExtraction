@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from Bio import SeqIO
 import os
 import argparse
@@ -5,10 +6,8 @@ import argparse
 def filter_fasta(input_file, output_file, keyword, flag):
     # Read the input FASTA file
     sequences = SeqIO.parse(input_file, "fasta")
-    print(flag)
-    print(type(flag))
+    
     if flag:
-        print("True flag triggered")
         # Filter sequences that do contain the keyword in their title
         filtered_sequences = (seq for seq in sequences if keyword.lower() in seq.description.lower())
         # filtered_sequences = (seq for seq in sequences if keyword.lower() in seq.description)

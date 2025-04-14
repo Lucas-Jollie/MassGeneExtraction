@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from Bio import SeqIO
 from Bio.Seq import UndefinedSequenceError
 import argparse
@@ -34,7 +36,6 @@ def create_fastas(input_file):
     n = 0
     with open(input_file, "r") as input_handle, open(output_file, "w") as output_handle:
         # process each record in the database
-        print(n)
         for record in SeqIO.parse(input_handle, "genbank"):
             # Go over all annotated features
             for feature in record.features:
@@ -69,7 +70,8 @@ def main():
     elif os.path.isdir(input_file):
         process_directory(input_file)
     else:
-        print("Invalid input")
+        print("extract_fasta_from_db.py: Invalid input.")
+        print(type(input_file))
 
                         
 if __name__ == "__main__":

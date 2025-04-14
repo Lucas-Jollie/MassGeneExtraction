@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Hard coded file path untill all scripts are loaded into PATH
-script_path='../../../../Python_Command_Tools/MassGeneExtraction/'
-# script_path2='../../../../Python_Command_Tools/'
+# set -x
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 3 ]; then
@@ -21,11 +19,24 @@ if file "$filename" | grep -q "CRLF"; then
     sed -i 's/\r$//' "$filename"
 fi
 
-# Add a newline to the file to prevent file gene from being missed
+# Remove any trailing newlines
+sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$filename"
+
+# Add a single newline at the end
 echo "" >> "$filename"
 
 # Create the output folder but silence the creation of it (-p)
 mkdir -p $output_folder
+
+# Check and convert Windows line endings (CRLF) to Linux line endings (LF)
+if file "$filename" | grep -q "CRLF"; then
+    echo "Converting Windows line endings to Linux line endings..."
+    sed -i 's/\r$//' "$filename"
+fi
+
+if [[ "${output_folder: -1}" != "/" ]]; then
+	output_folder="${output_folder}/"
+fi
 
 # Initialize an array to hold the file contents
 gene_list=()
@@ -33,10 +44,7 @@ gene_list=()
 # Read the file line by line and store each line in the array
 while IFS= read -r gene; do
 	# Checks if a new line was added in vain and ignores accordingly
-	if [ -z "$gene" ]; then
-		echo "Empty line found. Ignoring."
-	# Adds actual txt to array
-	else
+	if [[ -n "$gene" ]]; then
 		gene_list+=("$gene")
 	fi
 done < "$filename"
@@ -44,19 +52,18 @@ done < "$filename"
 # Run the automated database search for each gene
 for gene in "${gene_list[@]}"; do
 	echo "Looking for whole genomes with $gene..."
-	bash ${script_path}automated_query_db_whole_no_cmd.sh "$gene" "$organism" "$output_folder"
-	echo "Extracting genes into FASTA format..."
-	python3 ${script_path}extract_fasta_from_db.py "${output_folder}/NCBI_${gene}.gb"
+	bash automated_query_db_whole_no_cmd.sh "$gene" "$organism" "$output_folder"
+	echo "Extracting genes from whole genome databases into FASTA format..."
+	extract_fasta_from_db.py "${output_folder}/NCBI_${gene}.gb"
 	echo "Searching for individual gene uploads..."
-	bash ${script_path}query_db_individual_genes.sh "$gene" "$organism" "$output_folder"
-	echo "Extracting genes from individual querry into FASTA format..."
-	python3 ${script_path}extract_fasta_from_db.py "${output_folder}/NCBI_${gene}_genes.gb"
+	bash query_db_individual_genes.sh "$gene" "$organism" "$output_folder"
+	echo "Extracting genes from individual query into FASTA format..."
+	extract_fasta_from_db.py "${output_folder}/NCBI_${gene}_genes.gb"
 	echo "Merging all genes into one file..."
-	python3 ${script_path}combine_fasta_cmd_line.py "${output_folder}NCBI_${gene}_extracted.fasta" "${output_folder}NCBI_${gene}_genes_extracted.fasta" "${output_folder}NCBI_${gene}_merged.fasta"
+	combine_fasta_cmd_line.py "${output_folder}NCBI_${gene}_extracted.fasta" "${output_folder}NCBI_${gene}_genes_extracted.fasta" "${output_folder}NCBI_${gene}_merged.fasta"
+	echo "Files merged succesfully!"
+	echo "End of loop for $gene"
 done
-
-# Create FASTA files from the databases you have just created
-# python3 ${script_path}extract_fasta_from_db.py $output_folder
 
 # Remove the (large) database files
 echo "Removing database files..."
@@ -70,14 +77,22 @@ for gene in "${gene_list[@]}"; do
 	echo $gene
 	filtered_file_name=$(grep -rl "$gene" "$output_folder" | head -n 1)
 	echo $filtered_file_name
-	python3 ${script_path}filter_fasta_cmd.py "$filtered_file_name" "${output_folder}NCBI_${gene}_filtered.fasta" "$gene" "True"
+	filter_fasta_cmd.py "$filtered_file_name" "${output_folder}NCBI_${gene}_filtered.fasta" "$gene" "True"
 done
 
 # remove the FASTA files containing all of the sequences to leave the extracted sequences
 echo "Deleting merged files..."
 find "$output_folder" -type f -name "*merged*" -exec rm {} \;
 
+len_of_genes=${#gene_list[@]}
 
+if [ $len_of_genes == 1 ]; then
+	endnote="FASTA file containing gene of interest for $organism is stored in ${output_folder}"
+else
+	endnote="FASTA files containing genes of interest for $organism are stored in ${output_folder}"
+fi
+
+echo $endnote
 ####TODO
 # Use dedupe.sh to remove duplicates
 # Not sure if it is wise to include dedupe.sh as it is not my code. It will make my use significantly easier.
